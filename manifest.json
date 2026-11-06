@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "网络流量统计大师",
+  "version": "1.0",
+  "description": "实时统计网页浏览流量，支持日/月/年报表与会话记录。",
+  "permissions": [
+    "webRequest",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  }
+}
