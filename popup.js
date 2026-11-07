@@ -62,15 +62,21 @@ function renderChart(type, data) {
 
   if (chartInstance) chartInstance.destroy();
 
+  // 渲染为优雅平滑的曲线图 (Line Chart)
   chartInstance = new Chart(ctx, {
-    type: 'bar',
+    type: 'line',
     data: {
       labels: labels,
       datasets: [{
         label: '流量 (MB)',
         data: chartData,
-        backgroundColor: '#3B82F6',
-        borderRadius: 4
+        borderColor: '#3B82F6',
+        backgroundColor: 'rgba(59, 130, 246, 0.12)',
+        borderWidth: 2,
+        tension: 0.35,  // 曲线平滑度
+        fill: true,     // 下方浅色区域填充
+        pointRadius: 3,
+        pointHoverRadius: 5
       }]
     },
     options: {
@@ -91,11 +97,8 @@ document.getElementById('tab-year').addEventListener('click', (e) => switchTab('
 
 function switchTab(type, targetBtn) {
   currentTab = type;
-  ['tab-day', 'tab-month', 'tab-year'].forEach(id => {
-    const btn = document.getElementById(id);
-    btn.className = 'flex-1 py-1.5 rounded-md text-slate-600 hover:text-slate-900';
-  });
-  targetBtn.className = 'flex-1 py-1.5 rounded-md bg-white shadow text-slate-800';
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  targetBtn.classList.add('active');
   updateUI();
 }
 

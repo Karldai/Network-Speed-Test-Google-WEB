@@ -3,59 +3,90 @@
 <head>
   <meta charset="UTF-8">
   <title>流量统计</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { width: 360px; height: 500px; font-family: system-ui, -apple-system, sans-serif; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 360px;
+      height: 500px;
+      font-family: system-ui, -apple-system, sans-serif;
+      background-color: #f8fafc;
+      color: #1e293b;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 16px;
+    }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .header h1 { font-size: 18px; font-weight: bold; }
+    .badge { background: #dbeafe; color: #1d4ed8; font-size: 12px; padding: 4px 10px; border-radius: 9999px; font-weight: 500; }
+    
+    .card {
+      background: linear-gradient(135deg, #2563eb, #4f46e5);
+      color: white;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+    }
+    .card-title { font-size: 12px; opacity: 0.85; }
+    .card-value { font-size: 24px; font-weight: 800; margin-top: 4px; }
+    .card-footer { display: flex; justify-content: space-between; font-size: 12px; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.2); }
+
+    .tabs { display: flex; background: #e2e8f0; padding: 4px; border-radius: 8px; font-size: 12px; margin-bottom: 12px; }
+    .tab-btn { flex: 1; padding: 6px 0; border: none; background: transparent; color: #475569; border-radius: 6px; cursor: pointer; font-weight: 500; }
+    .tab-btn.active { background: white; color: #1e293b; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+    .chart-container { background: white; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0; height: 180px; }
+
+    .footer { margin-top: 14px; padding-top: 10px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+    select { font-size: 12px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 8px; background: white; outline: none; }
+    .btn-danger { background: #ef4444; color: white; border: none; font-size: 12px; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 500; }
+    .btn-danger:hover { background: #dc2626; }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 flex flex-col justify-between p-4">
+<body>
   <div>
     <!-- 头部 -->
-    <div class="flex justify-between items-center mb-4">
-      <h1 class="text-lg font-bold text-slate-900 flex items-center gap-1">
-        📊 流量统计
-      </h1>
-      <span id="session-badge" class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full font-medium">
-        本次会话: 0 MB
-      </span>
+    <div class="header">
+      <h1>📊 流量统计</h1>
+      <span id="session-badge" class="badge">本次会话: 0 MB</span>
     </div>
 
     <!-- 顶部总统计卡片 -->
-    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl p-4 shadow-sm mb-4">
-      <div class="text-xs text-blue-100">今日累计消耗</div>
-      <div class="text-2xl font-extrabold mt-1" id="today-traffic">0 MB</div>
-      <div class="flex justify-between text-xs text-blue-200 mt-3 pt-2 border-t border-blue-500/40">
-        <span>本月: <strong id="month-traffic" class="text-white">0 MB</strong></span>
-        <span>今年: <strong id="year-traffic" class="text-white">0 MB</strong></span>
+    <div class="card">
+      <div class="card-title">今日累计消耗</div>
+      <div class="card-value" id="today-traffic">0 MB</div>
+      <div class="card-footer">
+        <span>本月: <strong id="month-traffic">0 MB</strong></span>
+        <span>今年: <strong id="year-traffic">0 MB</strong></span>
       </div>
     </div>
 
     <!-- 选项卡切换 -->
-    <div class="flex bg-slate-200 p-1 rounded-lg text-xs font-medium mb-3">
-      <button id="tab-day" class="flex-1 py-1.5 rounded-md bg-white shadow text-slate-800">日视图</button>
-      <button id="tab-month" class="flex-1 py-1.5 rounded-md text-slate-600 hover:text-slate-900">月视图</button>
-      <button id="tab-year" class="flex-1 py-1.5 rounded-md text-slate-600 hover:text-slate-900">年视图</button>
+    <div class="tabs">
+      <button id="tab-day" class="tab-btn active">日视图</button>
+      <button id="tab-month" class="tab-btn">月视图</button>
+      <button id="tab-year" class="tab-btn">年视图</button>
     </div>
 
-    <!-- 柱状图 -->
-    <div class="bg-white p-2 rounded-xl shadow-sm border border-slate-100 h-44">
+    <!-- 曲线图容器 -->
+    <div class="chart-container">
       <canvas id="trafficChart"></canvas>
     </div>
   </div>
 
   <!-- 底部清理区域 -->
-  <div class="mt-4 pt-3 border-t border-slate-200 flex justify-between items-center">
-    <select id="clear-type" class="text-xs border border-slate-300 rounded px-2 py-1 bg-white">
+  <div class="footer">
+    <select id="clear-type">
       <option value="session">仅清空本次会话</option>
       <option value="today">仅清空今日</option>
       <option value="all">清空所有历史数据</option>
     </select>
-    <button id="btn-clear" class="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1.5 rounded transition">
-      清理数据
-    </button>
+    <button id="btn-clear" class="btn-danger">清理数据</button>
   </div>
 
+  <!-- 引用本地脚本 -->
+  <script src="chart.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
