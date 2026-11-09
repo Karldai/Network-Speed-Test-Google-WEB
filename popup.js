@@ -15,18 +15,46 @@ function updateUI() {
   const monthStr = `${yearStr}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const dayStr = `${monthStr}-${String(now.getDate()).padStart(2, '0')}`;
 
-  chrome.storage.local.get(['sessionTraffic', 'daily', 'monthly', 'yearly'], (res) => {
+  chrome.storage.local.get(['sessionTraffic', 'daily', 'monthly', 'yearly', 'domainTraffic'], (res) => {
     const session = res.sessionTraffic || 0;
     const daily = res.daily || {};
     const monthly = res.monthly || {};
     const yearly = res.yearly || {};
+    const domainTraffic = res.domainTraffic || {};
 
     document.getElementById('session-badge').innerText = `本次会话: ${formatBytes(session)}`;
     document.getElementById('today-traffic').innerText = formatBytes(daily[dayStr] || 0);
     document.getElementById('month-traffic').innerText = formatBytes(monthly[monthStr] || 0);
     document.getElementById('year-traffic').innerText = formatBytes(yearly[yearStr] || 0);
 
-    renderChart(currentTab, { daily, monthly, yearly });
+    if (currentTab === 'domain') {
+      renderDomainList(domainTraffic);
+    } else {
+      renderChart(currentTab, { daily, monthly, yearly });
+    }
+  });
+}
+
+function renderDomainList(domainTraffic) {
+  const listContainer = document.getElementById('domain-list');
+  listContainer.innerHTML = '';
+
+  const sortedDomains = Object.entries(domainTraffic)
+    .sort((a, b) => b[1] - a[1]);
+
+  if (sortedDomains.length === 0) {
+    listContainer.innerHTML = '<div class="empty-tip">暂无域名流量数据</div>';
+    return;
+  }
+
+  sortedDomains.forEach(([domain, bytes]) => {
+    const item = document.createElement('div');
+    item.className = 'domain-item';
+    item.innerHTML = `
+      <span class="domain-name">${domain}</span>
+      <span class="domain-val">${formatBytes(bytes)}</span>
+    `;
+    listContainer.appendChild(item);
   });
 }
 
@@ -62,7 +90,6 @@ function renderChart(type, data) {
 
   if (chartInstance) chartInstance.destroy();
 
-  // 渲染为优雅平滑的曲线图 (Line Chart)
   chartInstance = new Chart(ctx, {
     type: 'line',
     data: {
@@ -73,8 +100,8 @@ function renderChart(type, data) {
         borderColor: '#3B82F6',
         backgroundColor: 'rgba(59, 130, 246, 0.12)',
         borderWidth: 2,
-        tension: 0.35,  // 曲线平滑度
-        fill: true,     // 下方浅色区域填充
+        tension: 0.35,
+        fill: true,
         pointRadius: 3,
         pointHoverRadius: 5
       }]
@@ -94,11 +121,24 @@ function renderChart(type, data) {
 document.getElementById('tab-day').addEventListener('click', (e) => switchTab('day', e.target));
 document.getElementById('tab-month').addEventListener('click', (e) => switchTab('month', e.target));
 document.getElementById('tab-year').addEventListener('click', (e) => switchTab('year', e.target));
+document.getElementById('tab-domain').addEventListener('click', (e) => switchTab('domain', e.target));
 
 function switchTab(type, targetBtn) {
   currentTab = type;
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
   targetBtn.classList.add('active');
+
+  const chartBox = document.getElementById('chart-box');
+  const domainBox = document.getElementById('domain-box');
+
+  if (type === 'domain') {
+    chartBox.style.display = 'none';
+    domainBox.style.display = 'block';
+  } else {
+    chartBox.style.display = 'block';
+    domainBox.style.display = 'none';
+  }
+
   updateUI();
 }
 
@@ -114,6 +154,8 @@ document.getElementById('btn-clear').addEventListener('click', () => {
       delete daily[today];
       chrome.storage.local.set({ daily }, updateUI);
     });
+  } else if (type === 'domain') {
+    chrome.storage.local.set({ domainTraffic: {} }, updateUI);
   } else if (type === 'all') {
     if (confirm('确认清空所有历史流量记录？')) {
       chrome.storage.local.clear(updateUI);

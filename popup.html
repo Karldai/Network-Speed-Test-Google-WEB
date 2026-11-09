@@ -7,7 +7,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       width: 360px;
-      height: 500px;
+      height: 520px;
       font-family: system-ui, -apple-system, sans-serif;
       background-color: #f8fafc;
       color: #1e293b;
@@ -37,6 +37,13 @@
     .tab-btn.active { background: white; color: #1e293b; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
     .chart-container { background: white; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0; height: 180px; }
+    
+    .domain-container { background: white; padding: 8px 12px; border-radius: 12px; border: 1px solid #e2e8f0; height: 180px; overflow-y: auto; display: none; }
+    .domain-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #f1f5f9; font-size: 12px; }
+    .domain-item:last-child { border-bottom: none; }
+    .domain-name { font-weight: 500; word-break: break-all; max-width: 220px; color: #334155; }
+    .domain-val { color: #2563eb; font-weight: 600; }
+    .empty-tip { text-align: center; color: #94a3b8; font-size: 12px; margin-top: 60px; }
 
     .footer { margin-top: 14px; padding-top: 10px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
     select { font-size: 12px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 8px; background: white; outline: none; }
@@ -48,7 +55,7 @@
   <div>
     <!-- 头部 -->
     <div class="header">
-      <h1>📊 流量统计</h1>
+      <h1>📊 流量统计 v2.1</h1>
       <span id="session-badge" class="badge">本次会话: 0 MB</span>
     </div>
 
@@ -67,11 +74,17 @@
       <button id="tab-day" class="tab-btn active">日视图</button>
       <button id="tab-month" class="tab-btn">月视图</button>
       <button id="tab-year" class="tab-btn">年视图</button>
+      <button id="tab-domain" class="tab-btn">域名排行</button>
     </div>
 
     <!-- 曲线图容器 -->
-    <div class="chart-container">
+    <div id="chart-box" class="chart-container">
       <canvas id="trafficChart"></canvas>
+    </div>
+
+    <!-- 域名排行容器 -->
+    <div id="domain-box" class="domain-container">
+      <div id="domain-list"></div>
     </div>
   </div>
 
@@ -80,6 +93,7 @@
     <select id="clear-type">
       <option value="session">仅清空本次会话</option>
       <option value="today">仅清空今日</option>
+      <option value="domain">仅清空域名统计</option>
       <option value="all">清空所有历史数据</option>
     </select>
     <button id="btn-clear" class="btn-danger">清理数据</button>
