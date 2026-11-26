@@ -6,8 +6,8 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      width: 360px;
-      height: 520px;
+      width: 390px;
+      height: 560px;
       font-family: system-ui, -apple-system, sans-serif;
       background-color: #f8fafc;
       color: #1e293b;
@@ -16,36 +16,75 @@
       justify-content: space-between;
       padding: 16px;
     }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .header h1 { font-size: 18px; font-weight: bold; }
     .badge { background: #dbeafe; color: #1d4ed8; font-size: 12px; padding: 4px 10px; border-radius: 9999px; font-weight: 500; }
     
+    /* 顶部总览卡片：主显示 + 上下行2列拆分 */
     .card {
       background: linear-gradient(135deg, #2563eb, #4f46e5);
       color: white;
       border-radius: 12px;
       padding: 14px 16px;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
     }
+    .card-top { display: flex; justify-content: space-between; align-items: flex-end; }
     .card-title { font-size: 12px; opacity: 0.85; }
-    .card-value { font-size: 24px; font-weight: 800; margin-top: 4px; }
+    .card-value { font-size: 24px; font-weight: 800; margin-top: 2px; }
+    
+    /* 上下行两列独立区块 */
+    .ud-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+      padding: 8px 10px;
+      background: rgba(255, 255, 255, 0.14);
+      border-radius: 8px;
+    }
+    .ud-col {
+      display: flex;
+      flex-direction: column;
+    }
+    .ud-col:first-child {
+      border-right: 1px solid rgba(255, 255, 255, 0.2);
+      padding-right: 8px;
+    }
+    .ud-label {
+      font-size: 11px;
+      opacity: 0.85;
+      margin-bottom: 2px;
+    }
+    .ud-val {
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .ud-sub {
+      font-size: 10px;
+      opacity: 0.75;
+      margin-top: 2px;
+    }
+
     .card-footer { display: flex; justify-content: space-between; font-size: 12px; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.2); }
 
     .tabs { display: flex; background: #e2e8f0; padding: 4px; border-radius: 8px; font-size: 12px; margin-bottom: 12px; }
     .tab-btn { flex: 1; padding: 6px 0; border: none; background: transparent; color: #475569; border-radius: 6px; cursor: pointer; font-weight: 500; }
     .tab-btn.active { background: white; color: #1e293b; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
-    .chart-container { background: white; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0; height: 180px; }
+    .chart-container { background: white; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0; height: 185px; }
     
-    .domain-container { background: white; padding: 8px 12px; border-radius: 12px; border: 1px solid #e2e8f0; height: 180px; overflow-y: auto; display: none; }
+    /* 域名双栏排行容器与样式 */
+    .domain-container { background: white; padding: 8px 12px; border-radius: 12px; border: 1px solid #e2e8f0; height: 185px; overflow-y: auto; display: none; }
+    .domain-header-row { display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; color: #64748b; padding-bottom: 6px; border-bottom: 1px solid #cbd5e1; margin-bottom: 4px; }
     .domain-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #f1f5f9; font-size: 12px; }
     .domain-item:last-child { border-bottom: none; }
-    .domain-name { font-weight: 500; word-break: break-all; max-width: 220px; color: #334155; }
-    .domain-val { color: #2563eb; font-weight: 600; }
+    .col-domain { flex: 2; font-weight: 500; word-break: break-all; color: #334155; padding-right: 8px; }
+    .col-session { flex: 1; text-align: right; color: #0284c7; font-weight: 600; padding-right: 8px; }
+    .col-total { flex: 1; text-align: right; color: #2563eb; font-weight: 600; }
     .empty-tip { text-align: center; color: #94a3b8; font-size: 12px; margin-top: 60px; }
 
-    .footer { margin-top: 14px; padding-top: 10px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+    .footer { margin-top: 12px; padding-top: 10px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
     select { font-size: 12px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 8px; background: white; outline: none; }
     .btn-danger { background: #ef4444; color: white; border: none; font-size: 12px; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 500; }
     .btn-danger:hover { background: #dc2626; }
@@ -55,17 +94,36 @@
   <div>
     <!-- 头部 -->
     <div class="header">
-      <h1>📊 流量统计 v2.1</h1>
+      <h1>📊 流量统计 v2.3</h1>
       <span id="session-badge" class="badge">本次会话: 0 MB</span>
     </div>
 
-    <!-- 顶部总统计卡片 -->
+    <!-- 顶部总统计卡片（含独立上下行 2 列） -->
     <div class="card">
-      <div class="card-title">今日累计消耗</div>
-      <div class="card-value" id="today-traffic">0 MB</div>
+      <div class="card-top">
+        <div>
+          <div class="card-title">今日累计总消耗</div>
+          <div class="card-value" id="today-traffic">0 MB</div>
+        </div>
+      </div>
+
+      <!-- 上行 & 下行 2 列独立展示 -->
+      <div class="ud-grid">
+        <div class="ud-col">
+          <span class="ud-label">↑ 今日上行 (上传)</span>
+          <span class="ud-val" id="today-upload">0 B</span>
+          <span class="ud-sub">本次: <span id="session-upload">0 B</span></span>
+        </div>
+        <div class="ud-col">
+          <span class="ud-label">↓ 今日下行 (下载)</span>
+          <span class="ud-val" id="today-download">0 B</span>
+          <span class="ud-sub">本次: <span id="session-download">0 B</span></span>
+        </div>
+      </div>
+
       <div class="card-footer">
-        <span>本月: <strong id="month-traffic">0 MB</strong></span>
-        <span>今年: <strong id="year-traffic">0 MB</strong></span>
+        <span>本月总计: <strong id="month-traffic">0 MB</strong></span>
+        <span>今年总计: <strong id="year-traffic">0 MB</strong></span>
       </div>
     </div>
 
@@ -82,8 +140,13 @@
       <canvas id="trafficChart"></canvas>
     </div>
 
-    <!-- 域名排行容器 -->
+    <!-- 域名双栏排行容器 -->
     <div id="domain-box" class="domain-container">
+      <div class="domain-header-row">
+        <span class="col-domain">域名</span>
+        <span class="col-session">本次会话</span>
+        <span class="col-total">历史总计</span>
+      </div>
       <div id="domain-list"></div>
     </div>
   </div>
@@ -92,8 +155,8 @@
   <div class="footer">
     <select id="clear-type">
       <option value="session">仅清空本次会话</option>
-      <option value="today">仅清空今日</option>
-      <option value="domain">仅清空域名统计</option>
+      <option value="today">仅清空今日记录</option>
+      <option value="domain">仅清空域名历史数据</option>
       <option value="all">清空所有历史数据</option>
     </select>
     <button id="btn-clear" class="btn-danger">清理数据</button>

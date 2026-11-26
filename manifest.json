@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "网络流量统计大师",
-  "version": "2.1",
-  "description": "实时统计网页浏览流量，支持日/月/年平滑曲线报表、域名流量排行与无缝数据继承。",
+  "version": "2.3",
+  "description": "实时统计网页浏览流量，支持上下行流量独立分类、日/月/年平滑曲线报表、域名双栏排行与无缝数据继承。",
   "permissions": [
     "webRequest",
     "storage"

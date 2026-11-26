@@ -2,7 +2,7 @@ let currentTab = 'day';
 let chartInstance = null;
 
 function formatBytes(bytes) {
-  if (bytes === 0) return '0 B';
+  if (!bytes || bytes === 0) return '0 B';
   const k = 1024;
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -15,44 +15,74 @@ function updateUI() {
   const monthStr = `${yearStr}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const dayStr = `${monthStr}-${String(now.getDate()).padStart(2, '0')}`;
 
-  chrome.storage.local.get(['sessionTraffic', 'daily', 'monthly', 'yearly', 'domainTraffic'], (res) => {
+  chrome.storage.local.get([
+    'sessionTraffic', 'sessionUpload', 'sessionDownload',
+    'daily', 'dailyUpload', 'dailyDownload',
+    'monthly', 'yearly',
+    'sessionDomainTraffic', 'domainTraffic'
+  ], (res) => {
     const session = res.sessionTraffic || 0;
+    const sessionUp = res.sessionUpload || 0;
+    const sessionDown = res.sessionDownload || 0;
+
     const daily = res.daily || {};
+    const dailyUp = res.dailyUpload || {};
+    const dailyDown = res.dailyDownload || {};
+
     const monthly = res.monthly || {};
     const yearly = res.yearly || {};
+    const sessionDomainTraffic = res.sessionDomainTraffic || {};
     const domainTraffic = res.domainTraffic || {};
 
+    // 顶部总览数据填充
     document.getElementById('session-badge').innerText = `本次会话: ${formatBytes(session)}`;
     document.getElementById('today-traffic').innerText = formatBytes(daily[dayStr] || 0);
+    
+    // 上下行 2 列独立数据填充
+    document.getElementById('today-upload').innerText = formatBytes(dailyUp[dayStr] || 0);
+    document.getElementById('session-upload').innerText = formatBytes(sessionUp);
+    document.getElementById('today-download').innerText = formatBytes(dailyDown[dayStr] || 0);
+    document.getElementById('session-download').innerText = formatBytes(sessionDown);
+
     document.getElementById('month-traffic').innerText = formatBytes(monthly[monthStr] || 0);
     document.getElementById('year-traffic').innerText = formatBytes(yearly[yearStr] || 0);
 
     if (currentTab === 'domain') {
-      renderDomainList(domainTraffic);
+      renderDomainList(sessionDomainTraffic, domainTraffic);
     } else {
       renderChart(currentTab, { daily, monthly, yearly });
     }
   });
 }
 
-function renderDomainList(domainTraffic) {
+function renderDomainList(sessionDomainTraffic, domainTraffic) {
   const listContainer = document.getElementById('domain-list');
   listContainer.innerHTML = '';
 
-  const sortedDomains = Object.entries(domainTraffic)
-    .sort((a, b) => b[1] - a[1]);
+  const allDomains = Array.from(new Set([
+    ...Object.keys(sessionDomainTraffic),
+    ...Object.keys(domainTraffic)
+  ]));
+
+  const sortedDomains = allDomains.sort((a, b) => {
+    return (domainTraffic[b] || 0) - (domainTraffic[a] || 0);
+  });
 
   if (sortedDomains.length === 0) {
     listContainer.innerHTML = '<div class="empty-tip">暂无域名流量数据</div>';
     return;
   }
 
-  sortedDomains.forEach(([domain, bytes]) => {
+  sortedDomains.forEach((domain) => {
+    const sBytes = sessionDomainTraffic[domain] || 0;
+    const tBytes = domainTraffic[domain] || 0;
+
     const item = document.createElement('div');
     item.className = 'domain-item';
     item.innerHTML = `
-      <span class="domain-name">${domain}</span>
-      <span class="domain-val">${formatBytes(bytes)}</span>
+      <span class="col-domain" title="${domain}">${domain}</span>
+      <span class="col-session">${formatBytes(sBytes)}</span>
+      <span class="col-total">${formatBytes(tBytes)}</span>
     `;
     listContainer.appendChild(item);
   });
@@ -95,7 +125,7 @@ function renderChart(type, data) {
     data: {
       labels: labels,
       datasets: [{
-        label: '流量 (MB)',
+        label: '总流量 (MB)',
         data: chartData,
         borderColor: '#3B82F6',
         backgroundColor: 'rgba(59, 130, 246, 0.12)',
@@ -146,16 +176,25 @@ document.getElementById('btn-clear').addEventListener('click', () => {
   const type = document.getElementById('clear-type').value;
 
   if (type === 'session') {
-    chrome.storage.local.set({ sessionTraffic: 0 }, updateUI);
+    chrome.storage.local.set({ 
+      sessionTraffic: 0, 
+      sessionUpload: 0, 
+      sessionDownload: 0, 
+      sessionDomainTraffic: {} 
+    }, updateUI);
   } else if (type === 'today') {
     const today = new Date().toISOString().split('T')[0];
-    chrome.storage.local.get(['daily'], (res) => {
+    chrome.storage.local.get(['daily', 'dailyUpload', 'dailyDownload'], (res) => {
       const daily = res.daily || {};
+      const dailyUpload = res.dailyUpload || {};
+      const dailyDownload = res.dailyDownload || {};
       delete daily[today];
-      chrome.storage.local.set({ daily }, updateUI);
+      delete dailyUpload[today];
+      delete dailyDownload[today];
+      chrome.storage.local.set({ daily, dailyUpload, dailyDownload }, updateUI);
     });
   } else if (type === 'domain') {
-    chrome.storage.local.set({ domainTraffic: {} }, updateUI);
+    chrome.storage.local.set({ domainTraffic: {}, sessionDomainTraffic: {} }, updateUI);
   } else if (type === 'all') {
     if (confirm('确认清空所有历史流量记录？')) {
       chrome.storage.local.clear(updateUI);
